@@ -247,15 +247,17 @@ function renderChart() {
   const W = $('#chart').clientWidth;
   if (!W) return;
   const small = W < 560;
-  const plotH = small ? 240 : 300;
+  const plotH = small ? 260 : 300;
   const names = { 100: C.axis.top, 50: C.axis.middle, 0: C.axis.bottom };
   const font = `600 12px ${css('--sans')}`;
   const ctx = document.createElement('canvas').getContext('2d');
   ctx.font = font;
 
   // [y labels][ timeline ][gap][ sideways curve ][value label]
-  const l = Math.ceil(Math.max(...Object.values(names).map(n => ctx.measureText(n).width))) + 14;
-  const valueW = 40, sideW = small ? 64 : 140, gap = small ? 14 : 26;
+  // On phones the y labels move inside the plot and the value label is
+  // dropped (the big number sits right above), so the timeline gets the room.
+  const l = small ? 0 : Math.ceil(Math.max(...Object.values(names).map(n => ctx.measureText(n).width))) + 14;
+  const valueW = small ? 6 : 40, sideW = small ? 60 : 140, gap = small ? 10 : 26;
   const plotR = W - valueW - sideW - gap, sideX = plotR + gap;
   const n = U.length, slot = (plotR - l) / n;
   const cx = i => l + slot * (i + 0.5);
@@ -286,10 +288,16 @@ function renderChart() {
   root.setAttribute('viewBox', `0 0 ${W} ${H}`);
 
   // shared y-axis: gridlines run under both the timeline and the curve
-  for (const v of [100, 75, 50, 25, 0]) {
+  const ticks = [100, 75, 50, 25, 0];
+  for (const v of ticks) {
     svg('line', { x1: l, x2: sideX + sideW, y1: y(v), y2: y(v), class: v === 50 ? 'g-mid' : v === 0 ? 'g-base' : 'g-line' }, root);
-    text(root, { x: l - 10, y: y(v), dy: '0.32em', 'text-anchor': 'end', class: 'y-label' + (names[v] ? ' strong' : '') }, names[v] ?? `${v}%`);
   }
+  const yLabels = () => ticks.forEach(v => {
+    const cls = 'y-label' + (names[v] ? ' strong' : '') + (small ? ' inside' : '');
+    const at = small ? { x: 2, y: v === 100 ? y(v) + 14 : y(v) - 5 } : { x: l - 10, y: y(v), dy: '0.32em', 'text-anchor': 'end' };
+    text(root, { ...at, class: cls }, names[v] ?? `${v}%`);
+  });
+  if (!small) yLabels();
 
   for (const f of flags) {
     if (f.mo.t1 > f.mo.t0) svg('rect', { x: f.x, y: top, width: Math.max(2, Math.min(f.x1, plotR) - f.x), height: plotH, class: 'm-wash' }, root);
@@ -315,15 +323,18 @@ function renderChart() {
 
   const pts = U.map((u, i) => [cx(i), y(u.estimate)]);
   svg('path', { d: pathOf(pts), class: 'line' }, root);
+  if (small) yLabels();
 
   // x-axis: dates under the updates, skipping repeats and crowding; a break
   // mark where the calendar jumps by more than three weeks
-  let lastX = Infinity, lastLabel = '';
+  let lastLeft = Infinity, lastLabel = '';
   for (let i = n - 1; i >= 0; i--) {
     const label = fmt.day.format(U[i].t);
-    if (label === lastLabel || lastX - cx(i) < 50) continue;
-    text(root, { x: cx(i), y: top + plotH + 20, 'text-anchor': 'middle', class: 'x-label' }, label);
-    lastX = cx(i);
+    const half = ctx.measureText(label).width / 2;
+    const x = clamp(cx(i), l + half, plotR - half);
+    if (label === lastLabel || x + half + 10 > lastLeft) continue;
+    text(root, { x, y: top + plotH + 20, 'text-anchor': 'middle', class: 'x-label' }, label);
+    lastLeft = x - half;
     lastLabel = label;
   }
   for (let i = 0; i < n - 1; i++) {
@@ -340,7 +351,7 @@ function renderChart() {
   const dots = pts.map(([x, yy]) => svg('circle', { cx: x, cy: yy, r: 4, class: 'dot' }, root));
   svg('rect', { x: 0, y: 0, width: W, height: H, class: 'hit' }, root);
 
-  geo = { l, slot, pts, dots, cross, side, sideX, sideW, y, top, plotH };
+  geo = { l, slot, pts, dots, cross, side, sideX, sideW, y, top, plotH, small };
   refresh();
 }
 
@@ -366,7 +377,7 @@ function drawSide(u) {
   svg('path', { d: pathOf(curve), class: 's-line' }, side);
   svg('line', { x1: sideX, x2: px(at(u.estimate)), y1: y(u.estimate), y2: y(u.estimate), class: 's-mark' }, side);
   svg('line', { x1: sideX, x2: sideX, y1: top, y2: top + plotH, class: 's-base' }, side);
-  text(side, { x: sideX + sideW + 8, y: y(u.estimate), dy: '0.32em', class: 's-value' }, `${num(u.estimate)}%`);
+  if (!geo.small) text(side, { x: sideX + sideW + 8, y: y(u.estimate), dy: '0.32em', class: 's-value' }, `${num(u.estimate)}%`);
 }
 
 function updateMarks() {
