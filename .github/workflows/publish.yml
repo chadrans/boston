@@ -68,6 +68,10 @@ jobs:
       # A typo in a hand edit fails here, and the last good version stays live.
       - name: Check the data and settings parse
         run: node -e "for (const f of ['site/data.json', 'site/config.json']) JSON.parse(require('fs').readFileSync(f, 'utf8'))"
+      # Pages lets browsers cache files for 10 minutes. Stamping the script with
+      # the commit keeps a cached page and a fresh script from mixing.
+      - name: Stamp the script version
+        run: sed -i "s|src=\"app.js\"|src=\"app.js?v=$(git rev-parse --short HEAD)\"|" site/index.html
       - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5
         with:
