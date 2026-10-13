@@ -59,7 +59,16 @@
   .value { margin: 0; font-weight: 650; font-size: clamp(64px, 9vw, 88px); line-height: .86; letter-spacing: -0.045em; }
   .value .pct { font-size: .42em; font-weight: 600; letter-spacing: 0; vertical-align: .95em; margin-left: .05em; color: var(--ink-2); }
   .sub { margin: 0 0 6px; font: 400 18px/1.25 var(--serif); color: var(--ink-2); }
-  .facts { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin: 0; font-size: 14px; color: var(--ink-2); }
+  /* Two groups that never break internally: one row when there's room,
+     otherwise always the same two lines. */
+  .facts { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin: 0; font-size: 14px; color: var(--ink-2); }
+  .facts-group { display: inline-flex; align-items: center; gap: 14px; white-space: nowrap; }
+  .facts.split { flex-direction: column; align-items: flex-start; }
+  .readout.stacked .figure { flex-wrap: wrap; row-gap: 12px; }
+  .readout.stacked .figure > div { display: contents; }
+  .readout.stacked .sub { margin-bottom: 4px; }
+  .readout.stacked .facts { flex-basis: 100%; }
+  .readout.switch-below { flex-direction: column; align-items: flex-start; }
   .verdict { padding: 2px 9px; border: 1px solid var(--ink); border-radius: 999px; font-size: 11px; font-weight: 650; letter-spacing: .1em; text-transform: uppercase; color: var(--ink); }
 
   .switch { display: inline-flex; align-items: center; gap: 9px; margin-bottom: 4px; font-size: 13px; color: var(--ink-2); cursor: pointer; user-select: none; }
@@ -69,7 +78,7 @@
   .switch input:checked::after { transform: translateX(14px); }
   .switch input:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 
-  .chart svg { display: block; overflow: visible; touch-action: pan-y; -webkit-tap-highlight-color: transparent; }
+  .chart svg { display: block; overflow: visible; touch-action: pan-y; -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
   .chart svg:focus { outline: none; }
   .chart svg:focus-visible { outline: 2px solid var(--accent); outline-offset: 6px; border-radius: 4px; }
   .chart.flat .band { display: none; }
@@ -130,6 +139,7 @@
     .method-grid { grid-template-columns: 1fr; gap: 14px; }
     .figure { gap: 14px; }
     .sub { font-size: 16px; }
+    .long { display: none; }
   }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
@@ -149,7 +159,10 @@
         <p class="value"><span id="value">&nbsp;</span><span class="pct">%</span></p>
         <div>
           <p class="sub" id="caption">chance I move to Boston</p>
-          <p class="facts"><span class="verdict" id="verdict">&nbsp;</span><span id="delta"></span><span id="range"></span><span id="conv"></span></p>
+          <p class="facts">
+            <span class="facts-group"><span class="verdict" id="verdict">&nbsp;</span><span id="delta"></span></span>
+            <span class="facts-group"><span id="range"></span><span id="conv"></span></span>
+          </p>
         </div>
       </div>
       <label class="switch"><input type="checkbox" role="switch" id="toggle" checked><span>Show uncertainty</span></label>

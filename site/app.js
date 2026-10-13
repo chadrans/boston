@@ -94,6 +94,7 @@ async function init() {
   $('#caption').textContent = C.valueCaption;
   renderStats();
   renderLedger();
+  fitReadout();
   renderChart();
   bind();
 }
@@ -105,7 +106,7 @@ function bind() {
     if (w === lastW) return;
     lastW = w;
     cancelAnimationFrame(frame);
-    frame = requestAnimationFrame(renderChart);
+    frame = requestAnimationFrame(() => { fitReadout(); renderChart(); });
   }).observe($('#chart'));
 
   $('#toggle').addEventListener('change', e => $('#chart').classList.toggle('flat', !e.target.checked));
@@ -154,18 +155,40 @@ function refresh() {
 
 function renderReadout(i) {
   const u = U[i], prev = U[i - 1];
-  $('#when').textContent = i === U.length - 1
-    ? `Latest · ${fmt.full.format(u.t)}`
-    : `Update ${i + 1} of ${U.length} · ${fmt.full.format(u.t)}`;
+  const label = i === U.length - 1 ? 'Latest' : `Update ${i + 1} of ${U.length}`;
+  $('#when').replaceChildren(document.createTextNode(`${label} · ${fmt.day.format(u.t)}`),
+    node('span', 'long', `, ${new Date(u.t).getUTCFullYear()}`));
   $('#back').hidden = sel === U.length - 1;
   $('#value').textContent = num(u.estimate);
   $('#verdict').textContent = verdict(u.estimate);
+  // Phones hide the ".long" tail so the verdict and change always share a line.
   const diff = prev ? u.estimate - prev.estimate : null;
-  $('#delta').textContent = diff === null ? 'First update'
-    : diff === 0 ? 'No change from the last update'
-    : `${diff > 0 ? '▲' : '▼'} ${num(Math.abs(diff))} pts from the last update`;
+  const [short, tail] = diff === null ? ['First update', '']
+    : diff === 0 ? ['No change', ' from the last update']
+    : [`${diff > 0 ? '▲' : '▼'} ${num(Math.abs(diff))} pts`, ' from the last update'];
+  $('#delta').replaceChildren(document.createTextNode(short), node('span', 'long', tail));
   $('#range').textContent = `Range ${num(u.low)} to ${num(u.high)}%`;
   $('#conv').textContent = conviction(u);
+}
+
+// One readout layout per screen width, chosen for the widest update, so
+// nothing shifts as you move between updates. The facts sit beside the number
+// when every update fits there, otherwise below it; they take two lines
+// whenever any update would need two; the switch gets its own row whenever any
+// update would push it there.
+function fitReadout() {
+  const readout = $('.readout'), facts = $('.facts'), sw = $('.switch'), fig = $('.figure');
+  const anyUpdate = test => U.some((_, i) => { renderReadout(i); return test(); });
+  const groups = () => [...facts.querySelectorAll('.facts-group')].map(g => g.getBoundingClientRect());
+  const right = $('.board').getBoundingClientRect().right + 0.5;
+  readout.classList.remove('stacked', 'switch-below');
+  facts.classList.remove('split');
+  const overflow = anyUpdate(() => groups().some(g => g.right > right));
+  const wraps = anyUpdate(() => { const [a, b] = groups(); return b.top > a.top + a.height / 2; });
+  readout.classList.toggle('stacked', overflow);
+  facts.classList.toggle('split', overflow || wraps);
+  readout.classList.toggle('switch-below', anyUpdate(() => sw.getBoundingClientRect().top >= fig.getBoundingClientRect().bottom - 1));
+  renderReadout(hover ?? sel);
 }
 
 /* ---------- static bits ---------- */
