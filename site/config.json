@@ -1,0 +1,19 @@
+{
+  "valueCaption": "chance I move to Boston",
+  "axis": { "top": "Boston", "middle": "Toss-up", "bottom": "Indy" },
+  "verdictByEstimate": [
+    { "from": 0, "label": "Staying put" },
+    { "from": 10, "label": "Long shot" },
+    { "from": 25, "label": "Leaning Indy" },
+    { "from": 42, "label": "Toss-up" },
+    { "from": 59, "label": "Leaning Boston" },
+    { "from": 76, "label": "Likely Boston" },
+    { "from": 91, "label": "Pack the boxes" }
+  ],
+  "convictionByRangeWidth": [
+    { "from": 0, "label": "Settled" },
+    { "from": 21, "label": "Firming up" },
+    { "from": 36, "label": "Wobbly" },
+    { "from": 56, "label": "All over the place" }
+  ]
+}

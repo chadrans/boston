@@ -1,0 +1,76 @@
+name: Publish forecast
+
+on:
+  push:
+    branches: [main]
+  issues:
+    types: [opened, edited]
+  workflow_dispatch:
+
+concurrency:
+  group: forecast
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    # Only the repo owner can move the number. Anyone else's issues are ignored.
+    if: >-
+      github.event_name == 'issues' &&
+      github.event.issue.user.login == github.repository_owner &&
+      startsWith(github.event.issue.title, 'forecast')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Apply update and reply on the issue
+        env:
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          ISSUE: ${{ github.event.issue.number }}
+          GH_TOKEN: ${{ github.token }}
+          PAGE: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
+        run: |
+          if ! node scripts/apply-update.mjs > summary.txt 2> error.txt; then
+            { echo "Couldn't apply this one:"; echo; cat error.txt; echo; echo "Edit the issue to fix it and I'll try again."; } > reply.txt
+            gh issue comment "$ISSUE" --body-file reply.txt
+            exit 1
+          fi
+          if ! git diff --quiet site/data.json; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -am "$(head -n 1 summary.txt)"
+            git push
+          fi
+          { cat summary.txt; echo; echo "Live in about a minute: $PAGE"; } > reply.txt
+          gh issue comment "$ISSUE" --body-file reply.txt
+          gh issue close "$ISSUE"
+
+  deploy:
+    needs: apply
+    # Runs after a successful update, or on a plain push / manual run.
+    if: >-
+      !cancelled() &&
+      (needs.apply.result == 'success' ||
+      (needs.apply.result == 'skipped' && github.event_name != 'issues'))
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      # A typo in a hand edit fails here, and the last good version stays live.
+      - name: Check the data and settings parse
+        run: node -e "for (const f of ['site/data.json', 'site/config.json']) JSON.parse(require('fs').readFileSync(f, 'utf8'))"
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
+      - id: deployment
+        uses: actions/deploy-pages@v5

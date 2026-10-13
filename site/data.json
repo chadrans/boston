@@ -1,0 +1,20 @@
+{
+  "updates": [
+    {"date":"2026-06-24","estimate":11,"low":0,"high":17},
+    {"date":"2026-07-03","estimate":29,"low":10,"high":48},
+    {"date":"2026-09-22","estimate":15,"low":0,"high":30},
+    {"date":"2026-10-01","estimate":43,"low":12,"high":74},
+    {"date":"2026-10-07","estimate":23,"low":6,"high":40},
+    {"date":"2026-10-07","estimate":48,"low":34,"high":62},
+    {"date":"2026-10-09","estimate":16,"low":0,"high":25},
+    {"date":"2026-10-11","estimate":34,"low":6,"high":62},
+    {"date":"2026-10-12","estimate":52,"low":42,"high":62},
+    {"date":"2026-10-12","estimate":67,"low":59,"high":75},
+    {"date":"2026-10-13","estimate":74,"low":62,"high":81}
+  ],
+  "moments": [
+    {"start":"2026-06-29","end":"2026-07-03","label":"Boston trip"},
+    {"start":"2026-09-28","end":"2026-10-02","label":"NYC"},
+    {"start":"2026-10-10","end":"2026-10-13","label":"Boston trip"}
+  ]
+}
