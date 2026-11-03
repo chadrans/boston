@@ -14,7 +14,8 @@
     {"date":"2026-10-15","estimate":74,"low":52,"high":90},
     {"date":"2026-10-21","estimate":78,"low":66,"high":90},
     {"date":"2026-10-22","estimate":74,"low":61,"high":87},
-    {"date":"2026-10-26","estimate":77,"low":66,"high":88}
+    {"date":"2026-10-26","estimate":77,"low":66,"high":88},
+    {"date":"2026-11-03","estimate":80,"low":70,"high":94}
   ],
   "moments": [
     {"start":"2026-06-29","end":"2026-07-03","label":"Boston trip"},
